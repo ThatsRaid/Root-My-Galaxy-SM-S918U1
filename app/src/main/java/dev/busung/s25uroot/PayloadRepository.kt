@@ -17,22 +17,11 @@ data class VerifiedPayloads(
 
 class PayloadRepository(private val context: Context) {
     fun loadTargets(): List<TargetProfile> {
-        val bundledTargets = loadBundledTargets()
-        val remoteTargets = runCatching {
-            val commit = resolveMainCommit()
-            val manifestBytes = downloadBytes(rawUrl(commit, "support/targets-v2.json"), MAX_MANIFEST_BYTES)
-            SupportManifest.parse(manifestBytes).targets.map { profile ->
-                profile.copy(
-                    exploit = profile.exploit.copy(url = pinArtifactUrl(profile.exploit.url, commit)),
-                    kernelSu = profile.kernelSu.copy(
-                        artifact = profile.kernelSu.artifact.copy(
-                            url = pinArtifactUrl(profile.kernelSu.artifact.url, commit),
-                        ),
-                    ),
-                )
-            }
-        }.getOrElse { emptyList() }
-        return (bundledTargets + remoteTargets).distinctBy(TargetProfile::profileId)
+        /* v0.2.24+: 完全离线——manifest 内嵌于 APK assets，不访问任何网络。 */
+        val manifestBytes = context.assets.open("targets-v3.json").use { input ->
+            input.readBytes()
+        }
+        return SupportManifest.parse(manifestBytes).targets
     }
 
     fun resolveTarget(snapshot: DeviceSnapshot): TargetProfile = loadTargets()
@@ -45,21 +34,48 @@ class PayloadRepository(private val context: Context) {
 
     fun download(profile: TargetProfile, onProgress: (String) -> Unit): VerifiedPayloads {
         val directory = File(context.filesDir, "payloads/${profile.profileId}").apply { mkdirs() }
-        val exploit = downloadArtifact(
-            profile.exploit,
-            File(directory, "cve-2026-43499-app.so"),
-            context.getString(R.string.artifact_exploit),
-            onProgress,
-        )
-        val kernelSu = downloadArtifact(
-            profile.kernelSu.artifact,
-            File(directory, "ksud-selected"),
-            context.getString(R.string.artifact_kernelsu),
-            onProgress,
-        )
+        /* v0.2.28+: 强制使用内嵌 assets，绝不网络下载（杜绝版本漂移）。*/
+        val exploit = bundledAsset("cve-2026-43499-app.so", directory, onProgress,
+            context.getString(R.string.artifact_exploit_bundled))
+            ?: error("bundled exploit missing: cve-2026-43499-app.so")
+        val kernelSu = bundledAsset("ksud-f731u-kdp", directory, onProgress,
+            context.getString(R.string.artifact_kernelsu_bundled))
+            ?: error("bundled KernelSU missing: ksud-f731u-kdp")
         Os.chmod(exploit.absolutePath, 0b100100100)
         Os.chmod(kernelSu.absolutePath, 0b100100100)
         return VerifiedPayloads(profile, exploit, kernelSu)
+    }
+
+    /** 从 APK assets 解出内嵌文件；失败返回 null（由调用方 fallback 到下载）。 */
+    private fun bundledAsset(name: String, directory: File, onProgress: (String) -> Unit, label: String): File? {
+        return try {
+            val destination = File(directory, name)
+            // v0.2.36: 第二次运行修复——上次解出的文件被 chmod 0444（只读），
+            // 再次 FileOutputStream 写入会 Permission denied。
+            // 先删除旧文件（幂等），确保每次都能全新写入；删除失败则用 .tmp 新名兜底。
+            if (destination.exists()) {
+                if (!destination.delete()) {
+                    // 只读文件删不掉（极端情况）→ 换新名写入，避免 Permission denied
+                    val alt = File(directory, "${name}.${System.currentTimeMillis()}.tmp")
+                    FileOutputStream(alt).use { output ->
+                        context.assets.open(name).use { input -> input.copyTo(output) }
+                        output.fd.sync()
+                    }
+                    onProgress(label)
+                    return alt
+                }
+            }
+            FileOutputStream(destination).use { output ->
+                context.assets.open(name).use { input ->
+                    input.copyTo(output)
+                }
+                output.fd.sync()
+            }
+            onProgress(label)
+            destination
+        } catch (e: Throwable) {
+            null
+        }
     }
 
     private fun downloadArtifact(
@@ -69,9 +85,6 @@ class PayloadRepository(private val context: Context) {
         onProgress: (String) -> Unit,
     ): File {
         onProgress(context.getString(R.string.repo_downloading, label))
-        if (artifact.url.startsWith(ASSET_PREFIX)) {
-            return copyAssetArtifact(artifact, destination, label, onProgress)
-        }
         val temporary = File(destination.parentFile, "${destination.name}.part")
         val connection = open(artifact.url)
         require(connection.contentLengthLong == -1L || connection.contentLengthLong == artifact.size) {
@@ -103,45 +116,6 @@ class PayloadRepository(private val context: Context) {
         return destination
     }
 
-    private fun copyAssetArtifact(
-        artifact: RemoteArtifact,
-        destination: File,
-        label: String,
-        onProgress: (String) -> Unit,
-    ): File {
-        val assetPath = artifact.url.removePrefix(ASSET_PREFIX)
-        val temporary = File(destination.parentFile, "${destination.name}.part")
-        var total = 0L
-        context.assets.open(assetPath).use { input ->
-            FileOutputStream(temporary).use { output ->
-                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                while (true) {
-                    val count = input.read(buffer)
-                    if (count < 0) break
-                    total += count
-                    require(total <= artifact.size) {
-                        context.getString(R.string.repo_size_exceeded, label)
-                    }
-                    output.write(buffer, 0, count)
-                }
-                output.fd.sync()
-            }
-        }
-        require(total == artifact.size) { context.getString(R.string.repo_incomplete, label) }
-        if (destination.exists()) destination.delete()
-        require(temporary.renameTo(destination)) {
-            context.getString(R.string.repo_finalize_failed, label)
-        }
-        onProgress(context.getString(R.string.repo_verified, label))
-        return destination
-    }
-
-    private fun loadBundledTargets(): List<TargetProfile> = runCatching {
-        context.assets.open(BUNDLED_TARGETS).use { input ->
-            SupportManifest.parse(input.readBytes()).targets
-        }
-    }.getOrElse { emptyList() }
-
     private fun resolveMainCommit(): String {
         val response = downloadBytes(COMMIT_API_URL, MAX_COMMIT_RESPONSE_BYTES)
         val commit = JSONObject(response.toString(Charsets.UTF_8))
@@ -151,12 +125,12 @@ class PayloadRepository(private val context: Context) {
         return commit
     }
 
-    private fun rawUrl(commit: String, path: String) = "$RAW_REPOSITORY/$commit/$path"
+    private fun rawUrl(commit: String, path: String) =
+        "$RAW_REPOSITORY@$commit/$path"
 
     private fun pinArtifactUrl(url: String, commit: String): String {
-        if (url.startsWith(ASSET_PREFIX)) return url
         require(url.startsWith(MUTABLE_RAW_PREFIX)) { context.getString(R.string.repo_url_invalid) }
-        return "$RAW_REPOSITORY/$commit/${url.removePrefix(MUTABLE_RAW_PREFIX)}"
+        return "$RAW_REPOSITORY@$commit/${url.removePrefix(MUTABLE_RAW_PREFIX)}"
     }
 
     private fun downloadBytes(url: String, maximum: Int): ByteArray {
@@ -190,12 +164,13 @@ class PayloadRepository(private val context: Context) {
 
     companion object {
         private const val COMMIT_API_URL =
-            "https://api.github.com/repos/BuSung-dev/Root-My-Galaxy-Payloads/git/ref/heads/main"
+            "https://api.github.com/repos/youyoudezhuzhu/rmg-f731u/git/ref/heads/main"
+        /* v0.2.21: raw.githubusercontent.com 在大陆常被 CDN 缓存旧文件，
+         * 导致 App 永远拉到旧 exploit（校验 size 相同但内容旧）。
+         * 改用 jsdelivr CDN（全球节点、无污染缓存、commit-pinned 不可变）。 */
         private const val RAW_REPOSITORY =
-            "https://raw.githubusercontent.com/BuSung-dev/Root-My-Galaxy-Payloads"
-        private const val MUTABLE_RAW_PREFIX = "$RAW_REPOSITORY/main/"
-        private const val ASSET_PREFIX = "asset://"
-        private const val BUNDLED_TARGETS = "support/targets-v2.json"
+            "https://cdn.jsdelivr.net/gh/youyoudezhuzhu/rmg-f731u"
+        private const val MUTABLE_RAW_PREFIX = "$RAW_REPOSITORY@main/"
         private const val MAX_COMMIT_RESPONSE_BYTES = 16 * 1024
         private const val MAX_MANIFEST_BYTES = 256 * 1024
     }

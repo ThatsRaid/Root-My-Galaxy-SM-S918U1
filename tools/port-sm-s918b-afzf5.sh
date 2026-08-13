@@ -177,39 +177,28 @@ prepare_app_assets() {
 
   local asset_root="${REPO_ROOT}/app/src/main/assets"
   local jni_lib_dir="${REPO_ROOT}/app/src/main/jniLibs/arm64-v8a"
-  local support_dir="${asset_root}/support"
-  local payload_dir="${asset_root}/payloads/${PROFILE_ID}"
-  mkdir -p "$support_dir" "$payload_dir" "$jni_lib_dir"
+  mkdir -p "$asset_root" "$jni_lib_dir"
 
-  cp "$PATCHED_PAYLOAD" "${payload_dir}/cve-2026-43499-app.so"
-  cp "$KSUD_PATH" "${payload_dir}/ksud-f731u-kdp"
+  cp "$PATCHED_PAYLOAD" "${asset_root}/cve-2026-43499-app.so"
+  cp "$KSUD_PATH" "${asset_root}/ksud-f731u-kdp"
   cp "$HELPER_PATH" "${jni_lib_dir}/libcve43499root.so"
 
-  cat > "${support_dir}/targets-v2.json" <<JSON
+  cat > "${asset_root}/targets-v3.json" <<JSON
 {
-  "schemaVersion": 2,
-  "targets": [
+  "schemaVersion": 3,
+  "payloads": [
     {
-      "profileId": "${PROFILE_ID}",
-      "manufacturer": "samsung",
-      "model": "${TARGET_MODEL}",
-      "device": "${TARGET_DEVICE}",
-      "kernelRelease": "${TARGET_KERNEL_RELEASE}",
-      "kernelBuildVersion": "${TARGET_KERNEL_VERSION}",
-      "buildDisplay": "${TARGET_BUILD_DISPLAY}",
-      "buildFingerprint": "${TARGET_FINGERPRINT}",
-      "sdk": ${TARGET_SDK},
-      "abi": "${TARGET_ABI}",
-      "pageSize": ${TARGET_PAGE_SIZE},
+      "payloadId": "${PROFILE_ID}",
+      "displayName": "Galaxy S23 Ultra SM-S918B | S918BXXSAFZF5",
+      "models": ["${TARGET_MODEL}"],
+      "kernelVersions": ["5.15.189"],
       "exploit": {
-        "url": "asset://payloads/${PROFILE_ID}/cve-2026-43499-app.so",
+        "url": "asset://cve-2026-43499-app.so",
         "size": ${EXPECTED_PAYLOAD_SIZE}
       },
       "kernelsu": {
-        "url": "asset://payloads/${PROFILE_ID}/ksud-f731u-kdp",
-        "size": ${EXPECTED_KSUD_SIZE},
-        "kmi": "android13-5.15",
-        "managerPackage": "me.weishu.kernelsu"
+        "url": "asset://ksud-f731u-kdp",
+        "size": ${EXPECTED_KSUD_SIZE}
       }
     }
   ]

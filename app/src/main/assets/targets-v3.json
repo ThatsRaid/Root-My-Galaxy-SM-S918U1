@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 3,
+  "payloads": [
+    {
+      "payloadId": "dm3q-S918BXXSAFZF5",
+      "displayName": "Galaxy S23 Ultra SM-S918B | S918BXXSAFZF5",
+      "models": ["SM-S918B"],
+      "kernelVersions": ["5.15.189"],
+      "exploit": {
+        "url": "asset://cve-2026-43499-app.so",
+        "size": 131072
+      },
+      "kernelsu": {
+        "url": "asset://ksud-f731u-kdp",
+        "size": 6756208
+      }
+    }
+  ]
+}
