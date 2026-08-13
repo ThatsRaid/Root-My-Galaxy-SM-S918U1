@@ -39,14 +39,10 @@ in LKM jailbreak mode, and the Root My Galaxy app recognizing the target.
 ```text
 model: SM-S918B
 device: dm3q
-manufacturer: samsung
 build display: BP4A.251205.006.S918BXXSAFZF5
 fingerprint: samsung/dm3qxxx/dm3q:16/BP4A.251205.006/S918BXXSAFZF5:user/release-keys
 kernel release: 5.15.189-android13-8-33413713-abS918BXXSAFZF5
 kernel build: #1 SMP PREEMPT Tue Jun 9 09:47:44 UTC 2026
-Android SDK: 36
-ABI: arm64-v8a
-page size: 4096
 ```
 
 ## Prerequisites
@@ -66,6 +62,26 @@ Before running the port, make sure the phone is ready:
    Root My Galaxy running.
 6. **Start the Shizuku service**
 7. **Open Root My Galaxy** and grant it permission when Shizuku prompts.
+
+The script prints the manual ADB test commands at the end. It does not open a
+root shell automatically.
+
+## Documentation
+
+- [Documentation Index](docs/README.md): all detailed project docs.
+- [Target Profile](docs/TARGET.md): exact device and firmware values expected by this port.
+- [Project Structure](docs/PROJECT_STRUCTURE.md): what each directory contains.
+- [Reproduce The Port](docs/REPRODUCE_PORT.md): full payload generation flow.
+- [Build, Install, And ADB](docs/BUILD_INSTALL_ADB.md): app build, install, staging, and manual test commands.
+- [Troubleshooting](docs/TROUBLESHOOTING.md): common failures and how to diagnose them.
+
+Upstream reference material is also kept in:
+
+- [PORTING.md](PORTING.md)
+- [PROJECT-MANIFEST.txt](PROJECT-MANIFEST.txt)
+- [kernelsu/README.md](kernelsu/README.md)
+- [support/README.md](support/README.md)
+
 
 ## Quick Start
 
@@ -87,24 +103,6 @@ Build, install, and stage local ADB files:
 ./tools/port-sm-s918b-afzf5.sh --all
 ```
 
-The script prints the manual ADB test commands at the end. It does not open a
-root shell automatically.
-
-## Documentation
-
-- [Documentation Index](docs/README.md): all detailed project docs.
-- [Target Profile](docs/TARGET.md): exact device and firmware values expected by this port.
-- [Project Structure](docs/PROJECT_STRUCTURE.md): what each directory contains.
-- [Reproduce The Port](docs/REPRODUCE_PORT.md): full payload generation flow.
-- [Build, Install, And ADB](docs/BUILD_INSTALL_ADB.md): app build, install, staging, and manual test commands.
-- [Troubleshooting](docs/TROUBLESHOOTING.md): common failures and how to diagnose them.
-
-Upstream reference material is also kept in:
-
-- [PORTING.md](PORTING.md)
-- [PROJECT-MANIFEST.txt](PROJECT-MANIFEST.txt)
-- [kernelsu/README.md](kernelsu/README.md)
-- [support/README.md](support/README.md)
 
 ## Important Files
 
