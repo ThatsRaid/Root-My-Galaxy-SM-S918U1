@@ -127,3 +127,14 @@ procedure used as the starting point for this SM-S918B adaptation.
 
 This repository is an adaptation for `SM-S918B` / `dm3q` /
 `S918BXXSAFZF5`, not the original F731U target.
+
+## 🇧🇷 É Brazuca também? 
+
+Deixe um apoio usando Pix 💙
+
+Sua ajuda motiva expandir esse trabalho pra novos devices, e é um jeito de
+agradecer pelas noites sem dormir por trás desse port :)
+
+<p align="center">
+  <img src="docs/assets/screenshots/PixApoiaOBrazuca.png" alt="QR Code Pix para apoiar o projeto" width="220">
+</p>
