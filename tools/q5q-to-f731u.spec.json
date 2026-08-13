@@ -1,0 +1,23 @@
+{
+  "name": "q5q-F9460TBS9GZF1 to F731U-F731USQS8GZF1",
+  "comment": "5.15.189 symbol offsets +0x40; bypass model/grku checks. Base: q5q-F9460TBS9GZF1 payload (md5 31fab32a)",
+  "byte_patches": [
+    {"offset": "0x0026dd", "bytes": "2003d508008052"},
+    {"offset": "0x0067ed", "bytes": "67"},
+    {"offset": "0x0068b9", "bytes": "98"},
+    {"offset": "0x006965", "bytes": "98"},
+    {"offset": "0x006b7d", "bytes": "98"},
+    {"offset": "0x006bdd", "bytes": "98"},
+    {"offset": "0x007471", "bytes": "5c"},
+    {"offset": "0x007479", "bytes": "a3"},
+    {"offset": "0x00754d", "bytes": "5c"},
+    {"offset": "0x007555", "bytes": "a3"},
+    {"offset": "0x00765d", "bytes": "5c"},
+    {"offset": "0x00766d", "bytes": "a3"},
+    {"offset": "0x00789d", "bytes": "a0"},
+    {"offset": "0x0078ad", "bytes": "5f"},
+    {"offset": "0x007af5", "bytes": "5c"},
+    {"offset": "0x007afd", "bytes": "a3"},
+    {"offset": "0x009480", "bytes": "1f2003d5"}
+  ]
+}
