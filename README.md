@@ -10,42 +10,29 @@ firmware dumps, and local build caches are intentionally not tracked.
 
 Use this only on devices you own or are explicitly authorized to test.
 
-## Validation Screenshots
+## Screenshots
 
 These screenshots show the SM-S918B port reaching a root shell, KernelSU running
 in LKM jailbreak mode, and the Root My Galaxy app recognizing the target.
 
 <table>
   <tr>
-    <td align="center"><strong>Root shell</strong></td>
-    <td align="center"><strong>KernelSU Manager</strong></td>
     <td align="center"><strong>Root My Galaxy app</strong></td>
+    <td align="center"><strong>KernelSU Manager</strong></td>
+    <td align="center"><strong>Root shell</strong></td>
   </tr>
   <tr>
     <td align="center">
-      <img src="docs/assets/screenshots/root-shell.png" alt="ADB root shell on SM-S918B showing uid=0 and kernel SELinux context" width="320">
+      <img src="docs/assets/screenshots/root-my-galaxy-app.jpg" alt="Root My Galaxy app showing KernelSU active on SM-S918B" width="220">
     </td>
     <td align="center">
       <img src="docs/assets/screenshots/kernelsu-manager.jpg" alt="KernelSU Manager running on Samsung Galaxy S23 Ultra with kernel 5.15.189" width="220">
     </td>
     <td align="center">
-      <img src="docs/assets/screenshots/root-my-galaxy-app.jpg" alt="Root My Galaxy app showing KernelSU active on SM-S918B" width="220">
+      <img src="docs/assets/screenshots/root-shell.png" alt="ADB root shell on SM-S918B showing uid=0 and kernel SELinux context" width="320">
     </td>
   </tr>
 </table>
-
-## Credits And Base Repository
-
-This SM-S918B port is based on
-[youyoudezhuzhu/rmg-f731u](https://github.com/youyoudezhuzhu/rmg-f731u), the
-Root-My-Galaxy F731U Z Flip5 payloads + APK repository.
-
-Credit goes to that project for the F731U app/payload baseline, closed helper
-flow, KernelSU late-load packaging, support manifest structure, and the porting
-procedure used as the starting point for this SM-S918B adaptation.
-
-This repository is an adaptation for `SM-S918B` / `dm3q` /
-`S918BXXSAFZF5`, not the original F731U target.
 
 ## Validated Target
 
@@ -61,6 +48,24 @@ Android SDK: 36
 ABI: arm64-v8a
 page size: 4096
 ```
+
+## Prerequisites
+
+Before running the port, make sure the phone is ready:
+
+1. **Enable Developer options and USB debugging**.
+2. **Enable "Disable child process restrictions"** in Developer options
+   (wording varies by One UI version; it sits next to the USB debugging
+   toggles). Shizuku needs this to spawn the helper processes the port
+   relies on.
+3. **Install [Shizuku](https://shizuku.rikka.app/).** It performs the
+   privileged operations this app needs, without a full root shell.
+4. **Reboot the phone.** A clean boot avoids stale permission/service state
+   and makes the whole flow work on the first try.
+5. **Close every other app and background process.** Keep only Shizuku and
+   Root My Galaxy running.
+6. **Start the Shizuku service**
+7. **Open Root My Galaxy** and grant it permission when Shizuku prompts.
 
 ## Quick Start
 
@@ -111,3 +116,16 @@ app/src/main/assets/support/targets-v2.json
 src/targets/dm3q-S918BXXSAFZF5/target.h
 src/targets/dm3q-S918BXXSAFZF5/p0_fingerprint.h
 ```
+
+## Credits And Base Repository
+
+This SM-S918B port is based on
+[youyoudezhuzhu/rmg-f731u](https://github.com/youyoudezhuzhu/rmg-f731u), the
+Root-My-Galaxy F731U Z Flip5 payloads + APK repository.
+
+Credit goes to that project for the F731U app/payload baseline, closed helper
+flow, KernelSU late-load packaging, support manifest structure, and the porting
+procedure used as the starting point for this SM-S918B adaptation.
+
+This repository is an adaptation for `SM-S918B` / `dm3q` /
+`S918BXXSAFZF5`, not the original F731U target.
